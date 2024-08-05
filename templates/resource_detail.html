@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ resource.title }}{% endblock %}
+{% block content %}
+    <h1>{{ resource.title }}</h1>
+    <div class="card">
+        <p>{{ resource.description }}</p>
+        <p>Course: <a href="{{ url_for('course_detail', id=resource.course.id) }}">{{ resource.course.title }}</a></p>
+        {% if resource.is_free %}
+            <p>This resource is free.</p>
+            <a href="{{ url_for('resource_download', id=resource.id) }}">Download</a>
+        {% else %}
+            <p>Price: ${{ resource.price }}</p>
+            {% if 'user_id' in session %}
+                <a href="{{ url_for('resource_download', id=resource.id) }}">Download</a>
+            {% else %}
+                <p>Please <a href="{{ url_for('login') }}">log in</a> to download this resource.</p>
+            {% endif %}
+        {% endif %}
+    </div>
+{% endblock %}

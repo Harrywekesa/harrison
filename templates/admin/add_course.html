@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Add Course{% endblock %}
+{% block content %}
+    <h1>Add Course</h1>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        {{ form.title.label }} {{ form.title }}
+        {{ form.description.label }} {{ form.description }}
+        {{ form.level.label }} {{ form.level }}
+        {{ form.category.label }} {{ form.category }}
+        {{ form.submit }}
+    </form>
+{% endblock %}
