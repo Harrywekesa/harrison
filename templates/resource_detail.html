@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block title %}{{ resource.title }}{% endblock %}
 {% block content %}
-    <h1>{{ resource.title }}</h1>
     <div class="card">
+        <h1>{{ resource.title }}</h1>
         <p>{{ resource.description }}</p>
         <p>Course: <a href="{{ url_for('course_detail', id=resource.course.id) }}">{{ resource.course.title }}</a></p>
         {% if resource.is_free %}

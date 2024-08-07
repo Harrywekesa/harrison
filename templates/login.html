@@ -3,15 +3,28 @@
 {% block content %}
     <div class="card">
         <h1>Login</h1>
-        <form method="POST">
+        <form method="POST" action="{{ url_for('login') }}">
             {{ form.hidden_tag() }}
-            {{ form.email.label }} {{ form.email }}
-            {{ form.email.errors }}
-            {{ form.password.label }} {{ form.password }}
-            {{ form.password.errors }}
-            {{ form.remember_me.label }} {{ form.remember_me }}
-            {{ form.submit }}
+            <div class="form-group">
+                {{ form.email.label(class="form-control-label") }}
+                {{ form.email(class="form-control") }}
+                {% for error in form.email.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ form.password.label(class="form-control-label") }}
+                {{ form.password(class="form-control") }}
+                {% for error in form.password.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ form.remember_me() }} {{ form.remember_me.label }}
+            </div>
+            <div class="form-group">
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
         </form>
-        <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a>.</p>
     </div>
 {% endblock %}

@@ -1,47 +1,60 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_from_directory
-from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, SelectField, FloatField, FileField
 from wtforms.validators import DataRequired, Email, EqualTo
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import os
+from functools import wraps
+from flask import abort
+from flask_migrate import Migrate
+from db import db  # Import the db instance from db.py
+from models import User, Course, Resource
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
-db = SQLAlchemy(app)
 
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(150), nullable=False)
-    email = db.Column(db.String(150), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
-    is_admin = db.Column(db.Boolean, default=False)
+db.init_app(app)  # Initialize the db with the app
+migrate = Migrate(app, db)  # Initialize Migrate
 
-class Course(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text, nullable=False)
-    level = db.Column(db.String(50), nullable=False)
-    category = db.Column(db.String(100), nullable=False)
+# Forms
+class LoginForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    remember_me = BooleanField('Remember Me')
+    submit = SubmitField('Login')
 
-class Resource(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text, nullable=False)
-    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
-    is_free = db.Column(db.Boolean, default=False)
-    file_path = db.Column(db.String(200), nullable=False)
-    price = db.Column(db.Float, nullable=True)
-    course = db.relationship('Course', backref=db.backref('resources', lazy=True))
+class RegistrationForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
+    is_admin = BooleanField('Register as Admin')
+    submit = SubmitField('Register')
 
-from forms import LoginForm, RegistrationForm, CourseForm, ResourceForm
+class CourseForm(FlaskForm):
+    title = StringField('Title', validators=[DataRequired()])
+    description = TextAreaField('Description', validators=[DataRequired()])
+    level = StringField('Level', validators=[DataRequired()])
+    category = StringField('Category', validators=[DataRequired()])
+    submit = SubmitField('Add Course')
 
+class ResourceForm(FlaskForm):
+    title = StringField('Title', validators=[DataRequired()])
+    description = TextAreaField('Description', validators=[DataRequired()])
+    course_id = SelectField('Course', coerce=int, validators=[DataRequired()])
+    is_free = BooleanField('Free')
+    file = FileField('File', validators=[DataRequired()])
+    price = FloatField('Price')
+    submit = SubmitField('Add Resource')
+
+# Routes
 @app.route('/')
 def home():
-    return render_template('home.html')
+    courses = Course.query.all()
+    return render_template('home.html', courses=courses)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -52,17 +65,26 @@ def login():
             session['user_id'] = user.id
             session['is_admin'] = user.is_admin
             flash('Login successful!', 'success')
-            return redirect(url_for('admin_dashboard' if user.is_admin else 'home'))
+            return redirect(url_for('admin_dashboard') if user.is_admin else url_for('home'))
         else:
             flash('Login failed. Check your email and password.', 'danger')
     return render_template('login.html', form=form)
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session or not session.get('is_admin'):
+            flash('Unauthorized access!', 'danger')
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegistrationForm()
     if form.validate_on_submit():
         hashed_password = generate_password_hash(form.password.data)
-        user = User(username=form.username.data, email=form.email.data, password=hashed_password)
+        user = User(username=form.username.data, email=form.email.data, password=hashed_password, is_admin=form.is_admin.data)
         db.session.add(user)
         db.session.commit()
         flash('Registration successful! You can now log in.', 'success')
@@ -77,13 +99,11 @@ def logout():
     return redirect(url_for('home'))
 
 @app.route('/admin/dashboard')
+@admin_required
 def admin_dashboard():
-    if 'user_id' not in session or not session.get('is_admin'):
-        flash('Unauthorized access!', 'danger')
-        return redirect(url_for('login'))
     return render_template('admin/dashboard.html')
-
 @app.route('/courses')
+
 def courses():
     courses = Course.query.all()
     return render_template('courses.html', courses=courses)
@@ -108,18 +128,13 @@ def resource_download(id):
         flash('Please log in to download this resource.', 'danger')
         return redirect(url_for('login'))
 
-@app.route('/admin/dashboard')
-def admin_dashboard():
-    if 'user_id' not in session or not User.query.get(session['user_id']).is_admin:
-        flash('Unauthorized access!', 'danger')
-        return redirect(url_for('login'))
-    return render_template('admin/dashboard.html')
+@app.shell_context_processor
+def make_shell_context():
+    return {'db': db, 'User': User, 'Course': Course, 'Resource': Resource}
 
 @app.route('/admin/add_course', methods=['GET', 'POST'])
+@admin_required
 def add_course():
-    if 'user_id' not in session or not User.query.get(session['user_id']).is_admin:
-        flash('Unauthorized access!', 'danger')
-        return redirect(url_for('login'))
     form = CourseForm()
     if form.validate_on_submit():
         course = Course(
@@ -135,10 +150,8 @@ def add_course():
     return render_template('admin/add_course.html', form=form)
 
 @app.route('/admin/add_resource', methods=['GET', 'POST'])
+@admin_required
 def add_resource():
-    if 'user_id' not in session or not User.query.get(session['user_id']).is_admin:
-        flash('Unauthorized access!', 'danger')
-        return redirect(url_for('login'))
     form = ResourceForm()
     form.course_id.choices = [(course.id, course.title) for course in Course.query.all()]
     if form.validate_on_submit():
