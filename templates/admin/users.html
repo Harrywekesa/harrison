@@ -1,21 +1,39 @@
 {% extends "base.html" %}
 {% block title %}Users{% endblock %}
 {% block content %}
-    <div class="card">
+    <div class="container">
         <h1>Users</h1>
-        <ul>
-            {% for user in users %}
-                <li>
-                    {{ user.username }} - {{ user.email }}
-                    <form action="{{ url_for('suspend_user', id=user.id) }}" method="post" style="display:inline;">
-                        <button type="submit" class="btn">Suspend</button>
-                    </form>
-                    <form action="{{ url_for('remove_user', id=user.id) }}" method="post" style="display:inline;">
-                        <button type="submit" class="btn">Remove</button>
-                    </form>
-                    <a href="{{ url_for('user_logs', id=user.id) }}" class="btn">View Logs</a>
-                </li>
-            {% endfor %}
-        </ul>
+        <div class="table-responsive">
+            <table class="user-table">
+                <thead>
+                    <tr>
+                        <th>User Name</th>
+                        <th>Email Address</th>
+                        <th>User Type</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                        <tr>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ 'Admin' if user.is_admin else 'Regular User' }}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <form action="{{ url_for('suspend_user', id=user.id) }}" method="post" style="display:inline;">
+                                        <button type="submit" class="btn">{{ 'Unsuspend' if user.is_suspended else 'Suspend' }}</button>
+                                    </form>
+                                    <form action="{{ url_for('remove_user', id=user.id) }}" method="post" style="display:inline;">
+                                        <button type="submit" class="btn">Remove</button>
+                                    </form>
+                                    <a href="{{ url_for('user_logs', id=user.id) }}" class="btn">View Logs</a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 {% endblock %}

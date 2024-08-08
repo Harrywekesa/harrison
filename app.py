@@ -15,6 +15,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.config['ADMIN_EMAIL'] = 'admin@example.com'  # Add your admin email here
 
 db.init_app(app)  # Initialize the db with the app
 migrate = Migrate(app, db)  # Initialize Migrate
@@ -62,6 +63,9 @@ def login():
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         if user and check_password_hash(user.password, form.password.data):
+            if user.is_suspended:
+                flash(f'Your account has been suspended. Please contact the admin at {app.config["ADMIN_EMAIL"]}.', 'danger')
+                return redirect(url_for('login'))
             session['user_id'] = user.id
             session['is_admin'] = user.is_admin
             flash('Login successful!', 'success')
@@ -122,8 +126,18 @@ def admin_users():
 @admin_required
 def suspend_user(id):
     user = User.query.get_or_404(id)
-    # Implement your suspend logic here
+    user.is_suspended = True
+    db.session.commit()
     flash(f'User {user.username} has been suspended.', 'info')
+    return redirect(url_for('admin_users'))
+
+@app.route('/admin/user/<int:id>/unsuspend', methods=['POST'])
+@admin_required
+def unsuspend_user(id):
+    user = User.query.get_or_404(id)
+    user.is_suspended = False
+    db.session.commit()
+    flash(f'User {user.username} has been unsuspended.', 'info')
     return redirect(url_for('admin_users'))
 
 @app.route('/admin/user/<int:id>/remove', methods=['POST'])
