@@ -10,12 +10,14 @@ from flask import abort
 from flask_migrate import Migrate
 from db import db  # Import the db instance from db.py
 from models import User, Course, Resource
+from flask_mail import Mail, Message
+from itsdangerous import URLSafeTimedSerializer
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['ADMIN_EMAIL'] = 'admin@example.com'  # Add your admin email here
+app.config['ADMIN_EMAIL'] = 'harrisonwekesa09@gmail.com.com'  # Add your admin email here
 
 db.init_app(app)  # Initialize the db with the app
 migrate = Migrate(app, db)  # Initialize Migrate
@@ -63,6 +65,9 @@ def login():
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         if user and check_password_hash(user.password, form.password.data):
+            if not user.is_verified:
+                flash('Please verify your email address before logging in.', 'danger')
+                return redirect(url_for('login'))
             if user.is_suspended:
                 flash(f'Your account has been suspended. Please contact the admin at {app.config["ADMIN_EMAIL"]}.', 'danger')
                 return redirect(url_for('login'))
@@ -92,17 +97,60 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# Flask-Mail configuration
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
+app.config['MAIL_USERNAME'] = 'harrisonwekesa09@gmail.com'
+app.config['MAIL_PASSWORD'] = 'nsmz fpzu oytg egij'
+app.config['MAIL_DEFAULT_SENDER'] = 'harrisonwekesa09@gmail.com'
+
+mail = Mail(app)
+s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegistrationForm()
     if form.validate_on_submit():
         hashed_password = generate_password_hash(form.password.data)
-        user = User(username=form.username.data, email=form.email.data, password=hashed_password, is_admin=form.is_admin.data)
+        user = User(username=form.username.data, email=form.email.data, password=hashed_password, is_admin=False)
         db.session.add(user)
         db.session.commit()
-        flash('Registration successful! You can now log in.', 'success')
+
+        # Generate a verification token
+        token = s.dumps(user.email, salt='email-confirm')
+
+        # Send the verification email
+        confirm_url = url_for('confirm_email', token=token, _external=True)
+        html = render_template('email/verify_email.html', confirm_url=confirm_url)
+        subject = "Please confirm your email"
+        send_email(user.email, subject, html)
+
+        flash('Registration successful! Please verify your email address.', 'success')
         return redirect(url_for('login'))
     return render_template('register.html', form=form)
+
+def send_email(to, subject, template):
+    msg = Message(subject, recipients=[to], html=template)
+    mail.send(msg)
+
+@app.route('/confirm/<token>')
+def confirm_email(token):
+    try:
+        email = s.loads(token, salt='email-confirm', max_age=3600)  # Token is valid for 1 hour
+    except:
+        flash('The confirmation link is invalid or has expired.', 'danger')
+        return redirect(url_for('login'))
+
+    user = User.query.filter_by(email=email).first_or_404()
+    if user.is_verified:
+        flash('Account already verified. Please log in.', 'success')
+    else:
+        user.is_verified = True
+        db.session.commit()
+        flash('You have confirmed your account. Thanks!', 'success')
+    return redirect(url_for('login'))
 
 @app.route('/logout')
 def logout():
