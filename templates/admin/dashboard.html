@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+    <div class="card">
+        <h1>Admin Dashboard</h1>
+        <a href="{{ url_for('add_course') }}" class="btn">Add Course</a>
+        <a href="{{ url_for('add_resource') }}" class="btn">Add Resource</a>
+        <a href="{{ url_for('admin_users') }}" class="btn">View Users</a>
+    </div>
+{% endblock %}

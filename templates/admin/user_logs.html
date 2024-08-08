@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}User Logs{% endblock %}
+{% block content %}
+    <div class="card">
+        <h1>User Logs for {{ user.username }}</h1>
+        <ul>
+            {% for log in logs %}
+                <li>{{ log }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endblock %}
