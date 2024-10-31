@@ -6,7 +6,7 @@ app = Flask(__name__)
 @app.route('/update-user/<email>')
 def update_user(email):
     # Connect to your SQLite database
-    conn = sqlite3.connect('site.db')  # Ensure the path is correct based on your app structure
+    conn = sqlite3.connect('instance/site.db')  # Ensure the path is correct based on your app structure
     cursor = conn.cursor()
 
     # Update the user record
