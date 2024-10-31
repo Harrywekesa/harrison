@@ -10,11 +10,8 @@ from flask import abort
 from flask_migrate import Migrate
 from db import db  # Import the db instance from db.py
 from models import User, Course, Resource
-<<<<<<< HEAD
 from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer
-=======
->>>>>>> harrison/main
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
