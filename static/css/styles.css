@@ -24,11 +24,7 @@ nav a {
 }
 
 nav a:hover {
-<<<<<<< HEAD
     color: white;
-=======
-    text-decoration: underline;
->>>>>>> harrison/main
 }
 
 .flash {
@@ -110,7 +106,7 @@ form input[type="submit"]:hover {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
     width: 100%;
     max-width: 400px;
-    text-align: center;
+    text-align: left;
 }
 
 .card h1 {
@@ -128,11 +124,7 @@ form input[type="submit"]:hover {
 }
 
 .card a:hover {
-<<<<<<< HEAD
     color: white;
-=======
-    text-decoration: underline;
->>>>>>> harrison/main
 }
 
 .btn {
@@ -148,7 +140,6 @@ form input[type="submit"]:hover {
 
 .btn:hover {
     background-color: lightgreen;
-<<<<<<< HEAD
     color: white;
 }
 
@@ -170,6 +161,4 @@ th {
 
 tr:nth-child(even) {
     background-color: #444;
-=======
->>>>>>> harrison/main
 }
