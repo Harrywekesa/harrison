@@ -10,14 +10,20 @@ from flask import abort
 from flask_migrate import Migrate
 from db import db  # Import the db instance from db.py
 from models import User, Course, Resource
+<<<<<<< HEAD
 from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer
+=======
+>>>>>>> harrison/main
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
+<<<<<<< HEAD
 app.config['ADMIN_EMAIL'] = 'harrisonwekesa09@gmail.com.com'  # Add your admin email here
+=======
+>>>>>>> harrison/main
 
 db.init_app(app)  # Initialize the db with the app
 migrate = Migrate(app, db)  # Initialize Migrate
@@ -65,12 +71,15 @@ def login():
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         if user and check_password_hash(user.password, form.password.data):
+<<<<<<< HEAD
             if not user.is_verified:
                 flash('Please verify your email address before logging in.', 'danger')
                 return redirect(url_for('login'))
             if user.is_suspended:
                 flash(f'Your account has been suspended. Please contact the admin at {app.config["ADMIN_EMAIL"]}.', 'danger')
                 return redirect(url_for('login'))
+=======
+>>>>>>> harrison/main
             session['user_id'] = user.id
             session['is_admin'] = user.is_admin
             flash('Login successful!', 'success')
@@ -79,6 +88,7 @@ def login():
             flash('Login failed. Check your email and password.', 'danger')
     return render_template('login.html', form=form)
 
+<<<<<<< HEAD
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -88,6 +98,8 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+=======
+>>>>>>> harrison/main
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -97,6 +109,7 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+<<<<<<< HEAD
 # Flask-Mail configuration
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
@@ -109,11 +122,14 @@ app.config['MAIL_DEFAULT_SENDER'] = 'harrisonwekesa09@gmail.com'
 mail = Mail(app)
 s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
+=======
+>>>>>>> harrison/main
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegistrationForm()
     if form.validate_on_submit():
         hashed_password = generate_password_hash(form.password.data)
+<<<<<<< HEAD
         user = User(username=form.username.data, email=form.email.data, password=hashed_password, is_admin=False)
         db.session.add(user)
         db.session.commit()
@@ -152,6 +168,15 @@ def confirm_email(token):
         flash('You have confirmed your account. Thanks!', 'success')
     return redirect(url_for('login'))
 
+=======
+        user = User(username=form.username.data, email=form.email.data, password=hashed_password, is_admin=form.is_admin.data)
+        db.session.add(user)
+        db.session.commit()
+        flash('Registration successful! You can now log in.', 'success')
+        return redirect(url_for('login'))
+    return render_template('register.html', form=form)
+
+>>>>>>> harrison/main
 @app.route('/logout')
 def logout():
     session.pop('user_id', None)
@@ -163,6 +188,7 @@ def logout():
 @admin_required
 def admin_dashboard():
     return render_template('admin/dashboard.html')
+<<<<<<< HEAD
 
 @app.route('/admin/users')
 @admin_required
@@ -206,25 +232,38 @@ def user_logs(id):
     return render_template('admin/user_logs.html', user=user, logs=logs)
 
 @app.route('/courses')
+=======
+@app.route('/courses')
+
+>>>>>>> harrison/main
 def courses():
     courses = Course.query.all()
     return render_template('courses.html', courses=courses)
 
 @app.route('/course/<int:id>')
+<<<<<<< HEAD
 @login_required
+=======
+>>>>>>> harrison/main
 def course_detail(id):
     course = Course.query.get_or_404(id)
     resources = Resource.query.filter_by(course_id=id).all()
     return render_template('course_detail.html', course=course, resources=resources)
 
 @app.route('/resource/<int:id>')
+<<<<<<< HEAD
 @login_required
+=======
+>>>>>>> harrison/main
 def resource_detail(id):
     resource = Resource.query.get_or_404(id)
     return render_template('resource_detail.html', resource=resource)
 
 @app.route('/resource/download/<int:id>')
+<<<<<<< HEAD
 @login_required
+=======
+>>>>>>> harrison/main
 def resource_download(id):
     resource = Resource.query.get_or_404(id)
     if resource.is_free or 'user_id' in session:
