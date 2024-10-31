@@ -101,13 +101,17 @@ form input[type="submit"]:hover {
 .card {
     background-color: #444;
     padding: 20px;
-    margin: 20px;
+    margin: 20px auto; /* Center horizontally */
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
     width: 100%;
-    max-width: 400px;
+    max-width: 400px; /* This will determine the card's maximum width */
     text-align: left;
+    display: flex; /* Optional: If you want to use flexbox inside the card */
+    flex-direction: column; /* Optional: To stack children vertically */
+    align-items: center; /* Optional: To center children inside the card */
 }
+
 
 .card h1 {
     margin-bottom: 20px;
